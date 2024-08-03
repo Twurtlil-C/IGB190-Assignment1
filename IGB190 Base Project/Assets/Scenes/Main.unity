@@ -461,6 +461,8 @@ MonoBehaviour:
   attacksPerSecond: 1.5
   attackRange: 2
   attackDamage: 10
+  isDead: 0
+  slashEffect: {fileID: 3605756190929400108, guid: 257d55e08f622ea4187214f31109e50d, type: 3}
 --- !u!195 &1499210159
 NavMeshAgent:
   m_ObjectHideFlags: 0
