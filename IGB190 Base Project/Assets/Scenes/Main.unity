@@ -375,7 +375,7 @@ MonoBehaviour:
   monsterSpawnEffect: {fileID: 7454158263514432492, guid: 001c9194ba7eebf4596a0e8a30998b38, type: 3}
   nextSpawnAt: 0
   skeletonCount: 0
-  maxSpawnCount: 1
+  maxSpawnCount: 5
 --- !u!65 &777443021
 BoxCollider:
   m_ObjectHideFlags: 0
