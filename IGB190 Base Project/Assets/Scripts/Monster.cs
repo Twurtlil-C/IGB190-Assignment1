@@ -13,6 +13,8 @@ public class Monster : MonoBehaviour, IDamageable
     public float attackRange = 2.0f;
     public float attackDamage = 10.0f;
 
+    public bool isArcher = false;
+
     // Store a reference to the player for easy access
     private Player player;
 
@@ -28,11 +30,14 @@ public class Monster : MonoBehaviour, IDamageable
     // Cache references to important components for easy access later
     private NavMeshAgent agentNavigation;
     private Animator animator;
+    private MonsterSpawner spawner;
 
     // Variables to control ability casting.
-    private enum Ability { Slash, /* Add more abilities in here! */ }
+    private enum Ability { Slash, Shoot, /* Add more abilities in here! */ }
     private Ability? abilityBeingCast = null;
     private float finishAbilityCastAt;
+    [Range(0.0f, 1.0f)] public float slashActivationPoint = 0.4f;
+    [Range(0.0f, 1.0f)] public float shootActivationPoint = 0.8f;
 
     // Start is called before the first frame update
     void Start()
@@ -40,6 +45,7 @@ public class Monster : MonoBehaviour, IDamageable
         agentNavigation = GetComponent<NavMeshAgent>();
         animator = GetComponentInChildren<Animator>();
         player = GameObject.FindObjectOfType<Player>();
+        spawner = GameObject.FindObjectOfType<MonsterSpawner>();
         canMoveAt = Time.time + 1.0f;
         transform.LookAt(player.transform);
     }
@@ -65,12 +71,20 @@ public class Monster : MonoBehaviour, IDamageable
     {
         // If the the player is within range, start a basic attack cast
         if (Vector3.Distance(transform.position, player.transform.position) < attackRange && Time.time > canCastAt)
-            StartCastingSlash();
+            if (isArcher) StartCastingShoot(); else StartCastingSlash();
 
         // If the current ability has reached the end of its cast, run the appropriate actions for the ability
         if (abilityBeingCast != null && Time.time > finishAbilityCastAt)
-            if (abilityBeingCast == Ability.Slash)
-                FinishCastingSlash();
+            switch (abilityBeingCast)
+            {
+                case Ability.Slash:
+                    FinishCastingSlash();
+                    break;
+
+                case Ability.Shoot:
+                    FinishCastingShoot();
+                    break;
+            }
 
         // If a cast is in progress, face towards the player
         if (abilityBeingCast != null)
@@ -95,7 +109,7 @@ public class Monster : MonoBehaviour, IDamageable
         // Calculate when the ability will finish casting, and when the monster can next cast and move
         float castTime = (1.0f / attacksPerSecond);
         canCastAt = Time.time + castTime;
-        finishAbilityCastAt = Time.time + 0.4f * castTime;
+        finishAbilityCastAt = Time.time + slashActivationPoint * castTime;
         canMoveAt = finishAbilityCastAt + MOVEMENT_DELAY_AFTER_CASTING;        
     }
 
@@ -111,6 +125,37 @@ public class Monster : MonoBehaviour, IDamageable
         foreach (Player target in targets)
             target.TakeDamage(attackDamage);       
 
+    }
+
+    private void StartCastingShoot()
+    {
+        // Stop the character from moving while they attack
+        agentNavigation.SetDestination(transform.position);
+
+        // Set the ability being cast to the slash ability
+        abilityBeingCast = Ability.Shoot;
+
+        // Play the appropriate ability animation at the correct speed
+        animator.CrossFadeInFixedTime("Attack", 0.2f);
+        animator.SetFloat("AttackSpeed", attacksPerSecond);
+
+        // Calculate when the ability will finish casting, and when the monster can next cast and move
+        float castTime = (1.0f / attacksPerSecond);
+        canCastAt = Time.time + castTime;
+        finishAbilityCastAt = Time.time + shootActivationPoint * castTime;
+        canMoveAt = finishAbilityCastAt + MOVEMENT_DELAY_AFTER_CASTING;
+    }
+
+    private void FinishCastingShoot()
+    {
+        // Clear the ability currently being cast
+        abilityBeingCast = null;
+
+        // Find all the targets that should be hit by the attack and damage them
+        Vector3 hitPoint = transform.position + transform.forward * attackRange;
+        List<Player> targets = Utilities.GetAllWithinRange<Player>(hitPoint, attackRange);
+        foreach (Player target in targets)
+            target.TakeDamage(attackDamage);
     }
 
     // Remove the specified amount of health from this unit, killing it if needed
@@ -129,6 +174,7 @@ public class Monster : MonoBehaviour, IDamageable
             animator.transform.SetParent(null);
             Destroy(animator.gameObject, TIME_BEFORE_CORPSE_DESTROYED);
         }
+        spawner.skeletonCount--;
         Destroy(gameObject);
     }
 

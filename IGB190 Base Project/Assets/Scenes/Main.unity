@@ -368,9 +368,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   timeBetweenSpawns: 2
   spawnRadius: 10
+  monstersToSpawn:
+  - {fileID: 427099614156170109, guid: 573e744169f18d04a8e68490055bbb33, type: 3}
+  - {fileID: 6434022710951595980, guid: 59e7054fa2332384b8f13bfa69dd827f, type: 3}
   monsterToSpawn: {fileID: 427099614156170109, guid: 573e744169f18d04a8e68490055bbb33, type: 3}
   monsterSpawnEffect: {fileID: 7454158263514432492, guid: 001c9194ba7eebf4596a0e8a30998b38, type: 3}
   nextSpawnAt: 0
+  skeletonCount: 0
+  maxSpawnCount: 1
 --- !u!65 &777443021
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -830,7 +835,13 @@ MonoBehaviour:
   attackRange: 2
   attackDamage: 10
   isDead: 0
+  buffCooldown: 30
+  buffDuration: 10
+  buffedAttackMultiplyer: 2
   slashEffect: {fileID: 3605756190929400108, guid: 257d55e08f622ea4187214f31109e50d, type: 3}
+  startBuffEffect: {fileID: 8344628100869536590, guid: be7554b4bd577a14288c1f1d37cd19fe, type: 3}
+  buffEffect: {fileID: 8236724668083945061, guid: 23a4195eb43d8c44e922313d4b4b944a, type: 3}
+  cleaveActivationPoint: 0.4
 --- !u!195 &1499210159
 NavMeshAgent:
   m_ObjectHideFlags: 0

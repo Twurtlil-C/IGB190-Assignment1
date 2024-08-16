@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 public class Player : MonoBehaviour, IDamageable
 {
     // Player Stats
+    [Header("Player Stats")]
     public float health = 500f;
     public float maxHealth = 500f;
     public float movementSpeed = 3.5f;
@@ -15,12 +16,27 @@ public class Player : MonoBehaviour, IDamageable
     public float attackDamage = 10.0f;
     [HideInInspector] public bool isDead;
 
+    // Player Buff Stats
+    [Header("Buff Stats")]
+    public float buffCooldown = 30.0f;
+    public float buffDuration = 10.0f;
+    public float buffedAttackMultiplyer = 2.0f;
+
+    private bool isBuffed = false;
+    private float attackDamageCache;
+    private float buffedAttackDamage;
+    private float buffDurationOver;
+
     // Visual Effects
+    [Header("Visual Effects")]
     public GameObject slashEffect;
+    public GameObject startBuffEffect;
+    public GameObject buffEffect;
 
     // Variables to control when the unit can attack and move
     private float canCastAt;
     private float canMoveAt;
+    private float canBuffAt;
 
     // Constants to prevent magic numbers in the code. Makes it easier to edit later
     private const float MOVEMENT_DELAY_AFTER_CASTING = 0.2f;
@@ -31,16 +47,20 @@ public class Player : MonoBehaviour, IDamageable
     private Animator animator;
 
     // Variables to control ability casting
-    private enum Ability { Cleave, /* Add more abilities here */}
+    private enum Ability { Cleave, Buff, /* Add more abilities here */}
     private Ability? abilityBeingCast = null;
     private float finishAbilityCastAt;
     private Vector3 abilityTargetLocation;
+    [Range(0.0f, 1.0f)] public float cleaveActivationPoint = 0.4f;
 
     // Start is called before the first frame update
     void Start()
     {
         agentNavigation = gameObject.GetComponent<NavMeshAgent>();
         animator = gameObject.GetComponentInChildren<Animator>();
+        // Save initial attack damage for buff
+        attackDamageCache = attackDamage;
+
     }
 
     // Update is called once per frame
@@ -49,6 +69,7 @@ public class Player : MonoBehaviour, IDamageable
         if (isDead) return;
         UpdateMovement();
         UpdateAbilityCasting();
+        UpdateBuffState();
     }
 
     private void UpdateMovement()
@@ -69,6 +90,11 @@ public class Player : MonoBehaviour, IDamageable
             StartCastingCleave();
         }
 
+        if (Input.GetKeyDown(KeyCode.Q) && Time.time > canBuffAt)
+        {
+            StartBuff();
+        }
+
         // If the current ability has reached the end of its cast, run the appropriate actions for the ability
         if (abilityBeingCast != null && Time.time > finishAbilityCastAt)
         {
@@ -76,6 +102,10 @@ public class Player : MonoBehaviour, IDamageable
             {
                 case Ability.Cleave:
                     FinishCastingCleave();
+                    break;
+
+                case Ability.Buff:
+                    FinishBuff();
                     break;
 
                 // Add additional cases for other abilities
@@ -88,6 +118,21 @@ public class Player : MonoBehaviour, IDamageable
             Quaternion look = Quaternion.LookRotation((abilityTargetLocation - transform.position).normalized);
             transform.rotation = Quaternion.Lerp(transform.rotation, look, Time.deltaTime * TURNING_SPEED);
         }
+    }
+
+    private void UpdateBuffState()
+    {
+        if (isBuffed)
+        {            
+            attackDamage = buffedAttackDamage;
+        }
+        else
+        {
+            // Reset attack damage value to previous
+            attackDamage = attackDamageCache;   
+        }
+
+        if (Time.time > buffDurationOver) isBuffed = false;
     }
 
     private void StartCastingCleave()
@@ -105,7 +150,7 @@ public class Player : MonoBehaviour, IDamageable
         // Calculate when the ability will finish casting, and when the player can next cast and move
         float castTime = (1.0f / attacksPerSecond);
         canCastAt = Time.time + castTime;
-        finishAbilityCastAt = Time.time + 0.4f * castTime;
+        finishAbilityCastAt = Time.time + cleaveActivationPoint * castTime;
         canMoveAt = finishAbilityCastAt + MOVEMENT_DELAY_AFTER_CASTING;
         abilityTargetLocation = Utilities.GetMouseWorldPosition();
     }
@@ -131,6 +176,45 @@ public class Player : MonoBehaviour, IDamageable
             target.TakeDamage(attackDamage);
         }
 
+    }
+
+    private void StartBuff()
+    {
+        // Stop character from moving any further
+        agentNavigation.SetDestination(transform.position);
+                
+        abilityBeingCast = Ability.Buff;
+
+        // Play buff animation
+        animator.Play("Buff");
+                
+        canBuffAt = Time.time + buffCooldown;
+        buffDurationOver = Time.time + buffDuration;
+    }
+
+    private void FinishBuff()
+    {
+        abilityBeingCast = null;
+
+
+        // Visual effects for buff
+        if (startBuffEffect != null)
+        {
+            GameObject startBuffVisual = Instantiate(startBuffEffect, transform.position, transform.rotation);
+            Destroy(startBuffVisual, 1.0f);
+        }
+
+        if (buffEffect != null)
+        {
+            GameObject buffVisual = Instantiate(buffEffect, transform.position, transform.rotation, transform);
+            Destroy(buffVisual, buffDuration);
+        }
+
+        
+        buffedAttackDamage = attackDamage * buffedAttackMultiplyer;
+
+        // Activate buffed state
+        isBuffed = true;
     }
 
     // Remove the specified amount of health from this unit, killing it if needed
