@@ -11,6 +11,10 @@ public class UnitUI : MonoBehaviour
     private IDamageable trackedDamageable;
     private Transform trackedTransform;
 
+    // Curved Health Bar
+    public AnimationCurve curve;
+    public bool useCurve = false;
+
     private void Awake()
     {
         trackedDamageable = GetComponentInParent<IDamageable>();
@@ -24,6 +28,14 @@ public class UnitUI : MonoBehaviour
         container.anchoredPosition = Camera.main.WorldToScreenPoint(world);
 
         // Update amount of visible red health bar
-        healthBar.fillAmount = trackedDamageable.GetCurrentHealthPercent();
+
+        if (useCurve)
+        {
+            healthBar.fillAmount = curve.Evaluate(trackedDamageable.GetCurrentHealthPercent());
+        }
+        else
+        {
+            healthBar.fillAmount = trackedDamageable.GetCurrentHealthPercent();
+        }
     }
 }

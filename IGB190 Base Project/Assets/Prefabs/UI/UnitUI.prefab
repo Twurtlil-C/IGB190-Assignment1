@@ -229,6 +229,31 @@ MonoBehaviour:
   container: {fileID: 5824405513360033007}
   healthBar: {fileID: 5282231694580888857}
   offset: {x: 0, y: 2, z: 0}
+  curve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0.017283529
+      outSlope: 0.017283529
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.3638889
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 2.6304162
+      outSlope: 2.6304162
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.047222137
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  useCurve: 0
 --- !u!1 &9030188973995353560
 GameObject:
   m_ObjectHideFlags: 0

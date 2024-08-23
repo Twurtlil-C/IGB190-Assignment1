@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
@@ -10,10 +11,17 @@ public class Player : MonoBehaviour, IDamageable
     [Header("Player Stats")]
     public float health = 500f;
     public float maxHealth = 500f;
+
     public float movementSpeed = 3.5f;
+
     public float attacksPerSecond = 1.5f;
     public float attackRange = 2.0f;
     public float attackDamage = 10.0f;
+
+    public bool isImmune = false;
+    
+    private float damageReduction = 0.0f;
+    
     [HideInInspector] public bool isDead;
 
     // Player Buff Stats
@@ -21,25 +29,47 @@ public class Player : MonoBehaviour, IDamageable
     public float buffCooldown = 30.0f;
     public float buffDuration = 10.0f;
     public float buffedAttackMultiplyer = 2.0f;
+    public float buffedDamageReduction = 0.2f;
 
     private bool isBuffed = false;
     private float attackDamageCache;
     private float buffedAttackDamage;
     private float buffDurationOver;
 
+    // Player Dodge Stats
+    [Header("Dodge Stats")]
+    public float dodgeCooldown = 1.5f;
+    public float dodgeStartup = 0.2f;
+    public float dodgeSpeed = 7.0f;
+    public float dodgeAcceleration = 15.0f;
+    public float dodgeLength = 3.0f;
+    public float dodgeDuration = 1.0f;
+
+    public static float dodgeBufferTime = 0.1f;
+
+    private float accelerationCache;
     // Visual Effects
     [Header("Visual Effects")]
     public GameObject slashEffect;
     public GameObject startBuffEffect;
     public GameObject buffEffect;
+    public GameObject dodgeEffect;
+
+    // Input Variables
+    private float bufferedDodgeAt = -dodgeBufferTime;
+    private bool hasPressedMove;
+    private bool hasPressedBuff;
+    private bool hasPressedAttack;
 
     // Variables to control when the unit can attack and move
     private float canCastAt;
     private float canMoveAt;
     private float canBuffAt;
+    private float canDodgeAt;
 
     // Constants to prevent magic numbers in the code. Makes it easier to edit later
     private const float MOVEMENT_DELAY_AFTER_CASTING = 0.2f;
+    private const float MOVEMENT_DELAY_AFTER_DODGING = 0.5f;
     private const float TURNING_SPEED = 10.0f;
 
     // Cache references to important components for easy access later
@@ -47,7 +77,7 @@ public class Player : MonoBehaviour, IDamageable
     private Animator animator;
 
     // Variables to control ability casting
-    private enum Ability { Cleave, Buff, /* Add more abilities here */}
+    private enum Ability { Cleave, Buff, Dodge, /* Add more abilities here */}
     private Ability? abilityBeingCast = null;
     private float finishAbilityCastAt;
     private Vector3 abilityTargetLocation;
@@ -58,8 +88,10 @@ public class Player : MonoBehaviour, IDamageable
     {
         agentNavigation = gameObject.GetComponent<NavMeshAgent>();
         animator = gameObject.GetComponentInChildren<Animator>();
-        // Save initial attack damage for buff
+
+        // Cache initial player stats
         attackDamageCache = attackDamage;
+        accelerationCache = agentNavigation.acceleration;
 
     }
 
@@ -67,16 +99,34 @@ public class Player : MonoBehaviour, IDamageable
     void Update()
     {
         if (isDead) return;
+        HandleInput();
         UpdateMovement();
         UpdateAbilityCasting();
         UpdateBuffState();
+        
+    }
+
+    private void HandleInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Q)) bufferedDodgeAt = Time.time;
+        
+        if (Input.GetMouseButton(0)) hasPressedMove = true; else hasPressedMove = false;
+
+        if (Input.GetKeyDown(KeyCode.W)) hasPressedBuff = true; else hasPressedBuff = false;
+        
+        if (Input.GetMouseButton(1)) hasPressedAttack = true; else hasPressedAttack = false;
+
     }
 
     private void UpdateMovement()
-    {
+    {        
+        if (Time.time > canMoveAt) isImmune = false;
+
         animator.SetFloat("Speed", agentNavigation.velocity.magnitude);
-        if (Input.GetMouseButton(0) && Time.time > canMoveAt)
+        if (hasPressedMove && Time.time > canMoveAt)
         {
+            agentNavigation.speed = movementSpeed;
+            agentNavigation.acceleration = accelerationCache;
             agentNavigation.SetDestination(Utilities.GetMouseWorldPosition());
         }
     }
@@ -85,14 +135,19 @@ public class Player : MonoBehaviour, IDamageable
     private void UpdateAbilityCasting()
     {
         // If the right click button is held and the player can cast, start a basic attack cast
-        if (Input.GetMouseButton(1) && Time.time > canCastAt)
+        if (hasPressedAttack && Time.time > canCastAt)
         {
             StartCastingCleave();
         }
 
-        if (Input.GetKeyDown(KeyCode.Q) && Time.time > canBuffAt)
+        if (hasPressedBuff && Time.time > canBuffAt)
         {
             StartBuff();
+        }
+
+        if (Time.time < bufferedDodgeAt + dodgeBufferTime && Time.time > canDodgeAt)
+        {
+            StartDodge();
         }
 
         // If the current ability has reached the end of its cast, run the appropriate actions for the ability
@@ -106,6 +161,10 @@ public class Player : MonoBehaviour, IDamageable
 
                 case Ability.Buff:
                     FinishBuff();
+                    break;
+
+                case Ability.Dodge:
+                    FinishDodge();
                     break;
 
                 // Add additional cases for other abilities
@@ -125,11 +184,13 @@ public class Player : MonoBehaviour, IDamageable
         if (isBuffed)
         {            
             attackDamage = buffedAttackDamage;
+            damageReduction = buffedDamageReduction;
         }
         else
         {
             // Reset attack damage value to previous
-            attackDamage = attackDamageCache;   
+            attackDamage = attackDamageCache;
+            damageReduction = 0.0f;
         }
 
         if (Time.time > buffDurationOver) isBuffed = false;
@@ -217,10 +278,44 @@ public class Player : MonoBehaviour, IDamageable
         isBuffed = true;
     }
 
+    private void StartDodge()
+    {
+        agentNavigation.SetDestination(transform.position);
+
+        abilityBeingCast = Ability.Dodge;
+
+        float castTime = dodgeDuration;
+        canDodgeAt = Time.time + dodgeCooldown;
+        finishAbilityCastAt = Time.time + dodgeStartup * castTime;
+        canMoveAt = finishAbilityCastAt + dodgeDuration;
+        abilityTargetLocation = Utilities.GetMouseWorldPosition();
+    }
+
+    private void FinishDodge()
+    {
+        abilityBeingCast = null;
+
+        if (dodgeEffect != null)
+        {
+            GameObject dodgeVisual = Instantiate(dodgeEffect, transform.position, transform.rotation, transform);
+            Destroy(dodgeVisual, dodgeLength);
+        }
+
+        agentNavigation.speed = dodgeSpeed;
+        agentNavigation.acceleration = dodgeAcceleration;
+        isImmune = true;
+        agentNavigation.SetDestination(abilityTargetLocation);
+    }
+
+
+    // IDamageable Methods
+
     // Remove the specified amount of health from this unit, killing it if needed
     public virtual void TakeDamage(float amount)
     {
-        health -= amount;
+        if (isImmune) return;
+
+        health -= amount * (1 - damageReduction);
         if (health <= 0)
             Kill();
     }
