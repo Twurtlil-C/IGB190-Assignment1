@@ -30,7 +30,7 @@ public class Monster : MonoBehaviour, IDamageable
     // Cache references to important components for easy access later
     private NavMeshAgent agentNavigation;
     private Animator animator;
-    private MonsterSpawner spawner;
+    [HideInInspector] public MonsterSpawner spawner;
 
     // Variables to control ability casting.
     private enum Ability { Slash, Shoot, /* Add more abilities in here! */ }
@@ -45,7 +45,7 @@ public class Monster : MonoBehaviour, IDamageable
         agentNavigation = GetComponent<NavMeshAgent>();
         animator = GetComponentInChildren<Animator>();
         player = GameObject.FindObjectOfType<Player>();
-        spawner = GameObject.FindObjectOfType<MonsterSpawner>();
+        //spawner = GameObject.FindObjectOfType<MonsterSpawner>();
         canMoveAt = Time.time + 1.0f;
         transform.LookAt(player.transform);
     }
@@ -175,6 +175,7 @@ public class Monster : MonoBehaviour, IDamageable
             Destroy(animator.gameObject, TIME_BEFORE_CORPSE_DESTROYED);
         }
         spawner.skeletonCount--;
+        spawner.monstersKilled++;
         Destroy(gameObject);
     }
 

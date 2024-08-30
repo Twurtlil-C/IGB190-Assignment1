@@ -172,6 +172,9 @@ MonoBehaviour:
   nextSpawnAt: 0
   skeletonCount: 0
   maxSpawnCount: 5
+  destroyAfter: 10
+  monstersKilled: 0
+  destroyEffect: {fileID: 7454158263514432492, guid: 4e3457c77e1c4124894045611df61597, type: 3}
 --- !u!1001 &6963347980309060712
 PrefabInstance:
   m_ObjectHideFlags: 0

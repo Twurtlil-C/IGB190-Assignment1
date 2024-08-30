@@ -88,6 +88,8 @@ public class Player : MonoBehaviour, IDamageable
     public PostProcessProfile postProcessing;
     private ColorGrading colorGrading;
 
+    private RandomiseSFXPitch randomSFXPitch;
+
     // Variables to control ability casting
     private enum Ability { Cleave, Buff, Dodge, /* Add more abilities here */}
     private Ability? abilityBeingCast = null;
@@ -100,6 +102,7 @@ public class Player : MonoBehaviour, IDamageable
     {
         agentNavigation = gameObject.GetComponent<NavMeshAgent>();
         animator = gameObject.GetComponentInChildren<Animator>();
+        randomSFXPitch = gameObject.GetComponent <RandomiseSFXPitch>();
 
         // Cache initial player stats
         attackDamageCache = attackDamage;
@@ -300,6 +303,7 @@ public class Player : MonoBehaviour, IDamageable
 
         abilityBeingCast = Ability.Dodge;
 
+        if (randomSFXPitch != null) randomSFXPitch.RandomisePitch();
         if (dodgeSFX != null) dodgeSFX.Play();
 
         float castTime = dodgeDuration;
