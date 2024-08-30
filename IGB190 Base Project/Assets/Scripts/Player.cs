@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour, IDamageable
@@ -31,7 +32,9 @@ public class Player : MonoBehaviour, IDamageable
     public float buffedAttackMultiplyer = 2.0f;
     public float buffedDamageReduction = 0.2f;
 
-    private bool isBuffed = false;
+    public AudioSource buffSFX;
+
+    public bool isBuffed = false;
     private float attackDamageCache;
     private float buffedAttackDamage;
     private float buffDurationOver;
@@ -47,13 +50,19 @@ public class Player : MonoBehaviour, IDamageable
 
     public static float dodgeBufferTime = 0.1f;
 
+    public AudioSource dodgeSFX;
+
     private float accelerationCache;
+
     // Visual Effects
     [Header("Visual Effects")]
     public GameObject slashEffect;
     public GameObject startBuffEffect;
     public GameObject buffEffect;
     public GameObject dodgeEffect;
+
+    public float initialScreenSaturation = 40f;
+    public float deathScreenSaturation = -90f;
 
     // Input Variables
     private float bufferedDodgeAt = -dodgeBufferTime;
@@ -64,8 +73,8 @@ public class Player : MonoBehaviour, IDamageable
     // Variables to control when the unit can attack and move
     private float canCastAt;
     private float canMoveAt;
-    private float canBuffAt;
-    private float canDodgeAt;
+    [HideInInspector] public float canBuffAt;
+    [HideInInspector] public float canDodgeAt;
 
     // Constants to prevent magic numbers in the code. Makes it easier to edit later
     private const float MOVEMENT_DELAY_AFTER_CASTING = 0.2f;
@@ -75,6 +84,9 @@ public class Player : MonoBehaviour, IDamageable
     // Cache references to important components for easy access later
     private NavMeshAgent agentNavigation;
     private Animator animator;
+
+    public PostProcessProfile postProcessing;
+    private ColorGrading colorGrading;
 
     // Variables to control ability casting
     private enum Ability { Cleave, Buff, Dodge, /* Add more abilities here */}
@@ -93,12 +105,14 @@ public class Player : MonoBehaviour, IDamageable
         attackDamageCache = attackDamage;
         accelerationCache = agentNavigation.acceleration;
 
+        postProcessing.TryGetSettings<ColorGrading>(out colorGrading);
+        colorGrading.saturation.value = initialScreenSaturation;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (isDead) return;
+        if (isDead) return;        
         HandleInput();
         UpdateMovement();
         UpdateAbilityCasting();
@@ -271,7 +285,9 @@ public class Player : MonoBehaviour, IDamageable
             Destroy(buffVisual, buffDuration);
         }
 
+        if (buffSFX != null) buffSFX.Play();
         
+        // Strengthen player while buffed
         buffedAttackDamage = attackDamage * buffedAttackMultiplyer;
 
         // Activate buffed state
@@ -283,6 +299,8 @@ public class Player : MonoBehaviour, IDamageable
         agentNavigation.SetDestination(transform.position);
 
         abilityBeingCast = Ability.Dodge;
+
+        if (dodgeSFX != null) dodgeSFX.Play();
 
         float castTime = dodgeDuration;
         canDodgeAt = Time.time + dodgeCooldown;
@@ -298,13 +316,16 @@ public class Player : MonoBehaviour, IDamageable
         if (dodgeEffect != null)
         {
             GameObject dodgeVisual = Instantiate(dodgeEffect, transform.position, transform.rotation, transform);
+            
             Destroy(dodgeVisual, dodgeLength);
         }
 
         agentNavigation.speed = dodgeSpeed;
         agentNavigation.acceleration = dodgeAcceleration;
         isImmune = true;
-        agentNavigation.SetDestination(abilityTargetLocation);
+        
+        Vector3 dodgeLocation = transform.position + (abilityTargetLocation - transform.position).normalized * dodgeLength;
+        agentNavigation.SetDestination(dodgeLocation);
     }
 
 
@@ -326,6 +347,7 @@ public class Player : MonoBehaviour, IDamageable
         isDead = true;
         agentNavigation.SetDestination(transform.position);
         animator.SetTrigger("Die");
+        colorGrading.saturation.value = deathScreenSaturation;
         StartCoroutine(RestartLevel());
     }
 
