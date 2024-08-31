@@ -97,6 +97,14 @@ MonoBehaviour:
   attacksPerSecond: 1
   attackRange: 2
   attackDamage: 10
+  isArcher: 0
+  defaultMaterial: {fileID: 2100000, guid: a63e65b18f4ae46439633640779a594d, type: 2}
+  hitMaterial: {fileID: 2100000, guid: 8fedae5a4d710d64887345598c63f80f, type: 2}
+  hitEffectDuration: 0.1
+  meshObject: {fileID: 8685075430172998098}
+  spawner: {fileID: 0}
+  slashActivationPoint: 0.4
+  shootActivationPoint: 0.8
 --- !u!1001 &6357038332215366776
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -263,5 +271,10 @@ PrefabInstance:
 --- !u!4 &8685075430172761842 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 405068, guid: a27aaa9514020fa44bb6081abd5f14fc, type: 3}
+  m_PrefabInstance: {fileID: 8685075430172897470}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8685075430172998098 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 166252, guid: a27aaa9514020fa44bb6081abd5f14fc, type: 3}
   m_PrefabInstance: {fileID: 8685075430172897470}
   m_PrefabAsset: {fileID: 0}

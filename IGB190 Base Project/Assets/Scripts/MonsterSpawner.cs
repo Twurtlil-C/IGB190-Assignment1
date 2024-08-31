@@ -21,7 +21,13 @@ public class MonsterSpawner : MonoBehaviour
     public int destroyAfter = 10;
     public int monstersKilled = 0;
     public GameObject destroyEffect;
-        
+
+    private GameLogic gameLogic;
+
+    private void Start()
+    {
+        gameLogic = FindObjectOfType<GameLogic>();
+    }
     // Update is called once per frame
     void Update()
     {
@@ -35,8 +41,8 @@ public class MonsterSpawner : MonoBehaviour
             Destroy(this.gameObject);
         }
 
-        // Cap spawns
-        if (skeletonCount >= maxSpawnCount) return;
+        // Cap spawns when max reached or when player wins
+        if (skeletonCount >= maxSpawnCount || gameLogic.gameWon) return;
 
 
         if (isActive && monsterToSpawn != null && Time.time > nextSpawnAt)

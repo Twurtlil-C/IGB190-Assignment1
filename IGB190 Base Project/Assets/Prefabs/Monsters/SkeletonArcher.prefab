@@ -55,6 +55,11 @@ MonoBehaviour:
   attackRange: 7
   attackDamage: 5
   isArcher: 1
+  defaultMaterial: {fileID: 2100000, guid: a63e65b18f4ae46439633640779a594d, type: 2}
+  hitMaterial: {fileID: 2100000, guid: 8fedae5a4d710d64887345598c63f80f, type: 2}
+  hitEffectDuration: 0.1
+  meshObject: {fileID: 4594036455540337854}
+  spawner: {fileID: 0}
   slashActivationPoint: 0.4
   shootActivationPoint: 0.8
 --- !u!65 &4196368875735027781
@@ -254,10 +259,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9595696, guid: b806d07906e3ec2418b856b830337dcf, type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 22100000, guid: cc13d3776b606ac48bad11f4416fdd4d, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -266,5 +267,10 @@ PrefabInstance:
 --- !u!4 &4594036455540038940 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 438824, guid: b806d07906e3ec2418b856b830337dcf, type: 3}
+  m_PrefabInstance: {fileID: 4594036455540404020}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &4594036455540337854 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 197514, guid: b806d07906e3ec2418b856b830337dcf, type: 3}
   m_PrefabInstance: {fileID: 4594036455540404020}
   m_PrefabAsset: {fileID: 0}

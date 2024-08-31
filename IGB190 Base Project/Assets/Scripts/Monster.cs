@@ -6,6 +6,7 @@ using UnityEngine.AI;
 public class Monster : MonoBehaviour, IDamageable
 {
     // Monster Stats
+    [Header("Basic Stats")]
     public float health = 40f;
     public float maxHealth = 40f;
     public float movementSpeed = 1.0f;
@@ -14,6 +15,14 @@ public class Monster : MonoBehaviour, IDamageable
     public float attackDamage = 10.0f;
 
     public bool isArcher = false;
+
+    // Hit Properties
+    [Header("Hit Properties")]
+    public Material defaultMaterial;
+    public Material hitMaterial;
+    public float hitEffectDuration = 0.1f;
+    // Reference to monster's mesh renderer
+    private SkinnedMeshRenderer skinRenderer;
 
     // Store a reference to the player for easy access
     private Player player;
@@ -30,12 +39,15 @@ public class Monster : MonoBehaviour, IDamageable
     // Cache references to important components for easy access later
     private NavMeshAgent agentNavigation;
     private Animator animator;
+    public GameObject meshObject;
     [HideInInspector] public MonsterSpawner spawner;
 
     // Variables to control ability casting.
     private enum Ability { Slash, Shoot, /* Add more abilities in here! */ }
     private Ability? abilityBeingCast = null;
     private float finishAbilityCastAt;
+
+    [Header("Ability Casting")]
     [Range(0.0f, 1.0f)] public float slashActivationPoint = 0.4f;
     [Range(0.0f, 1.0f)] public float shootActivationPoint = 0.8f;
 
@@ -45,6 +57,13 @@ public class Monster : MonoBehaviour, IDamageable
         agentNavigation = GetComponent<NavMeshAgent>();
         animator = GetComponentInChildren<Animator>();
         player = GameObject.FindObjectOfType<Player>();
+
+        // Specifically finds skinned mesh renderer in mesh object if specified (fixes skeleton archer material not changing initially)
+        if (meshObject != null) skinRenderer = meshObject.GetComponentInChildren<SkinnedMeshRenderer>();        
+        else skinRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
+
+        skinRenderer.material = defaultMaterial;
+
         //spawner = GameObject.FindObjectOfType<MonsterSpawner>();
         canMoveAt = Time.time + 1.0f;
         transform.LookAt(player.transform);
@@ -162,6 +181,7 @@ public class Monster : MonoBehaviour, IDamageable
     public void TakeDamage(float amount)
     {
         health -= amount;
+        StartCoroutine(HitEffect());
         if (health <= 0)
             Kill();
     }
@@ -170,6 +190,8 @@ public class Monster : MonoBehaviour, IDamageable
     {
         if (animator != null)
         {
+            if (defaultMaterial != null) skinRenderer.material = defaultMaterial;
+
             animator.SetTrigger("Die");
             animator.transform.SetParent(null);
             Destroy(animator.gameObject, TIME_BEFORE_CORPSE_DESTROYED);
@@ -182,5 +204,12 @@ public class Monster : MonoBehaviour, IDamageable
     public float GetCurrentHealthPercent()
     {
         return health / maxHealth;
+    }
+
+    public IEnumerator HitEffect()
+    {
+        if (hitMaterial != null) skinRenderer.material = hitMaterial;
+        yield return new WaitForSeconds(hitEffectDuration);
+        skinRenderer.material = defaultMaterial;
     }
 }
