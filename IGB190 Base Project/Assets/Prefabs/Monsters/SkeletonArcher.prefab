@@ -59,6 +59,12 @@ MonoBehaviour:
   hitMaterial: {fileID: 2100000, guid: 8fedae5a4d710d64887345598c63f80f, type: 2}
   hitEffectDuration: 0.1
   meshObject: {fileID: 4594036455540337854}
+  drops:
+  - {fileID: 4455892781654753731, guid: 8a929a92b63ef0e499c4173ec2d4aacf, type: 3}
+  dropChances:
+  - 0.075
+  increasedDropAtPlayerHealthPercent: 0.25
+  dropChanceIncrease: 6
   spawner: {fileID: 0}
   slashActivationPoint: 0.4
   shootActivationPoint: 0.8

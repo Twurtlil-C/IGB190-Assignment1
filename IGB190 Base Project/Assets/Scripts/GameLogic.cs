@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameLogic : MonoBehaviour
-{
+{    
     [Header("Objectives")]
     public int monsterKillObjective = 30;
     public int totalMonstersKilled = 0;
@@ -22,9 +22,18 @@ public class GameLogic : MonoBehaviour
 
     public bool gameWon = false;
 
+    // Reference to persistent game music object for restarting when game restarts
+    private GameObject gameMusic;
+    private AudioSource gameMusicSource;
+
     // Start is called before the first frame update
     void Start()
     {
+        // Reset game music on scene load
+        gameMusic = GameObject.FindGameObjectWithTag("Music");
+        gameMusicSource = gameMusic.GetComponent<AudioSource>();
+        gameMusicSource.Play();
+
         spawner = FindObjectsOfType<MonsterSpawner>();
 
         // Fade out image initially
@@ -68,8 +77,9 @@ public class GameLogic : MonoBehaviour
     public IEnumerator FadeToNextScene(int sceneNum, float fadeTime)
     {
         // 2f instead of 1f for the alpha parameter ensures fade is full black before next scene loads
-        fadeImage.CrossFadeAlpha(2f, fadeTime, true);
+        fadeImage.CrossFadeAlpha(2.0f, fadeTime, true);
         yield return new WaitForSeconds(fadeTime); 
-        SceneManager.LoadScene(sceneNum);
-    }
+        SceneManager.LoadSceneAsync(sceneNum);
+    }        
+        
 }

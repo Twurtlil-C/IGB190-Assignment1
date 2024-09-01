@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -21,8 +22,18 @@ public class Monster : MonoBehaviour, IDamageable
     public Material defaultMaterial;
     public Material hitMaterial;
     public float hitEffectDuration = 0.1f;
+
     // Reference to monster's mesh renderer
     private SkinnedMeshRenderer skinRenderer;
+
+    // Specific child object containing mesh renderer component
+    public GameObject meshObject;
+
+    [Header("Loot Drops")]
+    public GameObject[] drops;
+    public float[] dropChances;
+    public float increasedDropAtPlayerHealthPercent = 0.1f;
+    public float dropChanceIncrease = 2.0f;
 
     // Store a reference to the player for easy access
     private Player player;
@@ -39,7 +50,6 @@ public class Monster : MonoBehaviour, IDamageable
     // Cache references to important components for easy access later
     private NavMeshAgent agentNavigation;
     private Animator animator;
-    public GameObject meshObject;
     [HideInInspector] public MonsterSpawner spawner;
 
     // Variables to control ability casting.
@@ -196,9 +206,34 @@ public class Monster : MonoBehaviour, IDamageable
             animator.transform.SetParent(null);
             Destroy(animator.gameObject, TIME_BEFORE_CORPSE_DESTROYED);
         }
+
+        Drop();
         spawner.skeletonCount--;
         spawner.monstersKilled++;
         Destroy(gameObject);
+    }
+
+    public void Drop()
+    {        
+        if (drops == null || dropChances == null) return;
+        // Make sure there is a corresponding spawn chance for each item drop
+        if (drops.Length != dropChances.Length) return;
+
+        float spawnChance = 0;
+        for (int i = 0; i < drops.Length; i++)
+        {
+            // Increases drop rates if player health is below a certain threshold
+            if (player.GetCurrentHealthPercent() < increasedDropAtPlayerHealthPercent)
+                spawnChance = dropChances[i] * dropChanceIncrease;
+
+            else spawnChance = dropChances[i];
+
+            if (UnityEngine.Random.value <= spawnChance)
+            {
+                Instantiate(drops[i], transform.position, Quaternion.identity);
+            }
+        }
+        
     }
 
     public float GetCurrentHealthPercent()

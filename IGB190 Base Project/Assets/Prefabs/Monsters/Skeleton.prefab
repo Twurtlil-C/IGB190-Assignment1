@@ -102,6 +102,12 @@ MonoBehaviour:
   hitMaterial: {fileID: 2100000, guid: 8fedae5a4d710d64887345598c63f80f, type: 2}
   hitEffectDuration: 0.1
   meshObject: {fileID: 8685075430172998098}
+  drops:
+  - {fileID: 4455892781654753731, guid: 8a929a92b63ef0e499c4173ec2d4aacf, type: 3}
+  dropChances:
+  - 0.075
+  increasedDropAtPlayerHealthPercent: 0.25
+  dropChanceIncrease: 6
   spawner: {fileID: 0}
   slashActivationPoint: 0.4
   shootActivationPoint: 0.8
@@ -259,10 +265,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9554932, guid: a27aaa9514020fa44bb6081abd5f14fc, type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 22100000, guid: 5e4cfde9e173ec949bd7089713220daa, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

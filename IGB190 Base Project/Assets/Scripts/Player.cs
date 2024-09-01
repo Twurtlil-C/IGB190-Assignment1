@@ -19,6 +19,9 @@ public class Player : MonoBehaviour, IDamageable
     public float attackRange = 2.0f;
     public float attackDamage = 10.0f;
 
+    public float pickupRadius = 1.5f;
+    public AudioClip healPickupSFX;
+
     public bool isImmune = false;
     
     private float damageReduction = 0.0f;
@@ -32,7 +35,7 @@ public class Player : MonoBehaviour, IDamageable
     public float buffedAttackMultiplyer = 2.0f;
     public float buffedDamageReduction = 0.2f;
 
-    public AudioSource buffSFX;
+    public AudioClip buffSFX;
 
     public bool isBuffed = false;
     private float attackDamageCache;
@@ -50,7 +53,7 @@ public class Player : MonoBehaviour, IDamageable
 
     public static float dodgeBufferTime = 0.1f;
 
-    public AudioSource dodgeSFX;
+    public AudioClip dodgeSFX;
 
     private float accelerationCache;
 
@@ -84,6 +87,7 @@ public class Player : MonoBehaviour, IDamageable
     // Cache references to important components for easy access later
     private NavMeshAgent agentNavigation;
     private Animator animator;
+    private AudioSource audioSource;
 
     public PostProcessProfile postProcessing;
     private ColorGrading colorGrading;
@@ -103,6 +107,7 @@ public class Player : MonoBehaviour, IDamageable
         agentNavigation = gameObject.GetComponent<NavMeshAgent>();
         animator = gameObject.GetComponentInChildren<Animator>();
         randomSFXPitch = gameObject.GetComponent <RandomiseSFXPitch>();
+        audioSource = gameObject.GetComponent<AudioSource>();
 
         // Cache initial player stats
         attackDamageCache = attackDamage;
@@ -120,6 +125,7 @@ public class Player : MonoBehaviour, IDamageable
         UpdateMovement();
         UpdateAbilityCasting();
         UpdateBuffState();
+        ProcessHealth();
         
     }
 
@@ -288,7 +294,7 @@ public class Player : MonoBehaviour, IDamageable
             Destroy(buffVisual, buffDuration);
         }
 
-        if (buffSFX != null) buffSFX.Play();
+        if (buffSFX != null) PlaySound(buffSFX, false);
         
         // Strengthen player while buffed
         buffedAttackDamage = attackDamage * buffedAttackMultiplyer;
@@ -302,12 +308,13 @@ public class Player : MonoBehaviour, IDamageable
         agentNavigation.SetDestination(transform.position);
 
         abilityBeingCast = Ability.Dodge;
-
-        if (randomSFXPitch != null) randomSFXPitch.RandomisePitch();
-        if (dodgeSFX != null) dodgeSFX.Play();
+                
+        if (dodgeSFX != null) PlaySound(dodgeSFX, true);
 
         float castTime = dodgeDuration;
         canDodgeAt = Time.time + dodgeCooldown;
+        // Can't attack while dodging but can cancel attack animation by dodging
+        canCastAt = Time.time + castTime;
         finishAbilityCastAt = Time.time + dodgeStartup * castTime;
         canMoveAt = finishAbilityCastAt + dodgeDuration;
         abilityTargetLocation = Utilities.GetMouseWorldPosition();
@@ -327,11 +334,32 @@ public class Player : MonoBehaviour, IDamageable
         agentNavigation.speed = dodgeSpeed;
         agentNavigation.acceleration = dodgeAcceleration;
         isImmune = true;
-        
+
         Vector3 dodgeLocation = transform.position + (abilityTargetLocation - transform.position).normalized * dodgeLength;
         agentNavigation.SetDestination(dodgeLocation);
     }
 
+    private void ProcessHealth()
+    {
+        // Health cannot go above max health
+        if (health >= maxHealth) health = maxHealth;
+    
+        List<HealingOrb> healingOrbs = Utilities.GetAllWithinRange<HealingOrb>(transform.position, pickupRadius);
+        foreach (HealingOrb orb in healingOrbs)
+        {
+            orb.Collect(this);
+            PlaySound(healPickupSFX, true);
+        }
+    }
+
+    private void PlaySound(AudioClip sound, bool randomisedPitch)
+    {
+        // Random pitch for variation in SFX
+        if (randomSFXPitch != null && randomisedPitch) randomSFXPitch.RandomisePitch();
+        else randomSFXPitch.ResetPitch();
+
+        if (audioSource != null) audioSource.PlayOneShot(sound);
+    }
 
     // IDamageable Methods
 
